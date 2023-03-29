@@ -1,0 +1,63 @@
+version: '3.3'
+services:
+    ic-webapp:
+        container_name: ic-webapp
+        image: ic-webapp:1.0
+        ports:
+            - 80:8080
+        environment:
+            - "PGADMIN_URL=http://localhost:5050/"
+            - "ODOO_URL=http://localhost:8080/"
+        networks:
+            - ic_network
+    postgres:
+        container_name: postgres
+        image: postgres:10
+        environment:
+            - POSTGRES_USER=odoo_user
+            - POSTGRES_PASSWORD=odoo_password
+            - POSTGRES_DB=postgres
+        networks:
+            - ic_network
+        volumes:
+            - 'pgdata:/var/lib/postgresql/data'
+        ports:
+            - 5432:5432
+    pgadmin:
+        container_name: pgadmin
+        image: dpage/pgadmin4
+        networks:
+            - ic_network
+        environment:
+            - 'PGADMIN_DEFAULT_EMAIL=odoo@eazytraining.fr'
+            - 'PGADMIN_DEFAULT_PASSWORD=odoo_pgadmin_password'
+        ports:
+            - 5050:80
+        volumes:
+            - ./servers.json:/pgadmin4/servers.json
+            - 'pgadmin_data:/var/lib/pgadmin'
+    odoo:
+        image: odoo:13.0
+        container_name: odoo
+        depends_on:
+            - postgres
+        ports:
+            - 8080:8069
+        networks:
+            - ic_network
+        volumes:
+            - '/data_docker/config:/etc/odoo'
+            - '/data_docker/addons:/mnt/extra-addons'
+            - 'odoo-web-data:/var/lib/odoo'
+        environment:
+            - USER=odoo_user
+            - PASSWORD=odoo_password
+            - HOST=postgres
+volumes:
+    odoo-web-data:
+    pgdata:
+    pgadmin_data:
+networks:
+    ic_network:
+      driver: bridge
+      name: ic_network
